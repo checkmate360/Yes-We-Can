@@ -22,6 +22,11 @@
 
 
 #include "../inc/hzl.h"
+#include "../inc/hzl_Client.h"
+#include "../inc/hzl_ClientOs.h"
+#include "../inc/hzl_Server.h"
+#include "../inc/hzl_ServerOs.h"
+
 
 #include "lib.h"
 
@@ -257,6 +262,8 @@ void update_speed_status(struct canfd_frame *cf, int maxdlen) {
 /* Parses CAN frame and updates turn signal status */
 void update_signal_status(struct canfd_frame *cf, int maxdlen) {
   int len = (cf->len > maxdlen) ? maxdlen : cf->len;
+
+  printf("IN UPDATE SIGNAL\n");
   if(len < signal_pos) return;
   if(cf->data[signal_pos] & CAN_LEFT_SIGNAL) {
     turn_status[0] = ON;
@@ -445,6 +452,12 @@ int main(int argc, char *argv[]) {
   // Draw the IC
   redraw_ic();
 
+  hzl_ServerCtx_t* server;
+  hzl_Err_t err = hzl_ServerNew(&server, "config/Server.hzl");
+  if(err != HZL_OK) {
+    printf("ERROR WITH SERVER INIT");
+  }
+
   /* For now we will just operate on one CAN interface */
   while(running) {
     while( SDL_PollEvent(&event) != 0 ) {
@@ -476,6 +489,58 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "read: incomplete CAN frame\n");
         return 1;
       }
+      hzl_CbsPduMsg_t reactionPdu;
+      hzl_RxSduMsg_t receivedUserData;
+
+      hzl_Err_t hzlErrCode = hzl_ServerProcessReceived(
+        &reactionPdu,
+        &receivedUserData,
+        server,
+        frame.data,
+        frame.len,
+        frame.can_id
+      );
+
+      if (hzlErrCode == HZL_OK)
+      {
+        // Successful validation and potential decrpytion of the message.
+        if(reactionPdu.dataLen > 0) {
+            printf("Successful, send reaction back \n");
+            memset(&frame, 0, sizeof(frame));
+            frame.can_id = signal_id;
+            frame.len = reactionPdu.dataLen;
+            memcpy(frame.data, reactionPdu.data,sizeof(reactionPdu.data));
+            write(can, &frame, CANFD_MTU);
+            continue;
+        }
+      }
+      else if (hzlErrCode == HZL_ERR_MSG_IGNORED)
+      {
+        // The message was successfully processed, only it is not addressed to this party
+        // or not of interest in the current state.
+        printf("Ignore \n");
+      }
+      else if (hzlErrCode == HZL_ERR_SESSION_NOT_ESTABLISHED)
+      {
+        // Client-side error only: the session information was not obtained yet,
+        // cannot process the secured message received while waiting for a Response.
+        // (Re)send a Request message to obtain the session information instead.
+        // Discard the received message.
+        printf("Session not established \n");
+      }
+      else if (HZL_IS_SECURITY_WARNING(hzlErrCode))
+      {
+        // The message was not successfully processed, as a security problem was detected with it.
+        printf("Security Warning\n");
+        //continue;
+        int x = 5;
+      }
+      else
+      {
+        // All other problems, which should all be issues in at program-time (e.g. using too small
+        // buffers) but not at run-time.
+        printf("Some other problem\n");
+      }
       for (cmsg = CMSG_FIRSTHDR(&msg);
            cmsg && (cmsg->cmsg_level == SOL_SOCKET);
            cmsg = CMSG_NXTHDR(&msg,cmsg)) {
@@ -487,6 +552,8 @@ int main(int argc, char *argv[]) {
   	     fprintf(stderr, "Dropped packet\n");
              }
 //      if(debug) fprint_canframe(stdout, &frame, "\n", 0, maxdlen);
+
+      memcpy(frame.data, receivedUserData.data, sizeof(receivedUserData.data));
       if(frame.can_id == door_id) update_door_status(&frame, maxdlen);
       if(frame.can_id == signal_id) update_signal_status(&frame, maxdlen);
       if(frame.can_id == speed_id) update_speed_status(&frame, maxdlen);
