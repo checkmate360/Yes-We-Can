@@ -27,6 +27,7 @@
 #include "../inc/hzl_Server.h"
 #include "../inc/hzl_ServerOs.h"
 
+
 #include "lib.h"
 
 #ifndef DATA_DIR
@@ -500,13 +501,15 @@ int main(int argc, char *argv[]) {
         frame.can_id
       );
 
+      int can_id = frame.can_id;
+
       if (hzlErrCode == HZL_OK)
       {
         // Successful validation and potential decrpytion of the message.
         if(reactionPdu.dataLen > 0) {
             printf("Successful, send reaction back \n");
             memset(&frame, 0, sizeof(frame));
-            frame.can_id = signal_id;
+            frame.can_id = can_id;
             frame.len = reactionPdu.dataLen;
             memcpy(frame.data, reactionPdu.data,sizeof(reactionPdu.data));
             write(can, &frame, CANFD_MTU);
@@ -526,11 +529,14 @@ int main(int argc, char *argv[]) {
         // (Re)send a Request message to obtain the session information instead.
         // Discard the received message.
         printf("Session not established \n");
+      } else if(hzlErrCode == HZL_ERR_SECWARN_OLD_MESSAGE) {
+        printf("SECURITY WARNING: OLD MESSAGE\n");
       }
       else if (HZL_IS_SECURITY_WARNING(hzlErrCode))
       {
         // The message was not successfully processed, as a security problem was detected with it.
-        printf("Security Warning\n");
+        printf("Other Security Warning: %d\n",can_id);
+        //printf("%d\n", hzlErrCode);
         //continue;
       }
       else
