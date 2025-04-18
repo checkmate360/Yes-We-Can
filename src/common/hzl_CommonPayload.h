@@ -151,7 +151,7 @@ _Static_assert(HZL_REN_PAYLOAD_LEN == 19,
 #define HZL_SADFD_CTEXT_END(ctlen) (HZL_SADFD_PTLEN_END + (ctlen))
 
 #define HZL_SADFD_TAG_IDX(ctlen) HZL_SADFD_CTEXT_END(ctlen)
-#define HZL_SADFD_TAG_LEN 8U
+#define HZL_SADFD_TAG_LEN 16U
 #define HZL_SADFD_TAG_END(ctlen) (HZL_SADFD_TAG_IDX(ctlen) + HZL_SADFD_TAG_LEN)
 
 #define HZL_SADFD_METADATA_IN_PAYLOAD_LEN (\
@@ -163,7 +163,7 @@ _Static_assert(HZL_REN_PAYLOAD_LEN == 19,
 _Static_assert(HZL_SADFD_TAG_END(0) == HZL_SADFD_METADATA_IN_PAYLOAD_LEN,
                "The length of an SADFD message without data must be consistent with the "
                "metadata length");
-_Static_assert(HZL_SADFD_PAYLOAD_LEN(0) == 12,
+_Static_assert(HZL_SADFD_PAYLOAD_LEN(0) == 20,
                "SADFD Payload with an empty SDU must be exactly 12 bytes long");
 
 #define HZL_SADFD_AEADNONCE_CTR_IDX 0U

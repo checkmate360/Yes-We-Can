@@ -52,6 +52,7 @@ hzl_CommonAeadInitRes(hzl_Aead_t* const aead,
     uint8_t aeadNonce[HZL_AEAD_NONCE_LEN] = {0};
     memcpy(&aeadNonce[HZL_RES_AEADNONCE_REQNONCE_IDX], encodedRequestNonce, HZL_REQ_REQNONCE_LEN);
     memcpy(&aeadNonce[HZL_RES_AEADNONCE_RESNONCE_IDX], encodedResponseNonce, HZL_RES_RESNONCE_LEN);
+    printf("The RES NONCE is %x\n", *aeadNonce);
     hzl_AeadInit(aead, ltk, aeadNonce);
 
     // Associated data = label || GID || SID || PTY || clientSid || receivedCtrnonce

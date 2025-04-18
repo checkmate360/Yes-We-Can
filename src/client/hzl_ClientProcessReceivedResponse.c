@@ -87,17 +87,22 @@ hzl_ClientProcessReceivedResponse(const hzl_ClientCtx_t* ctx,
                           clientSid);
     // Decryption start
     uint8_t plaintextStk[HZL_RES_CTEXT_LEN] = {0};
-    const size_t processedPtLen = hzl_AeadDecryptUpdate(
+    err = hzl_AeadDecryptUpdate(
             &aead,
             plaintextStk,  // Output: plaintext
             &rxPdu[packedHdrLen + HZL_RES_CTEXT_IDX],  // Input: ciphertext
-            HZL_RES_CTEXT_LEN);
+            HZL_RES_CTEXT_LEN,
+            &rxPdu[packedHdrLen + HZL_RES_TAG_IDX],
+            HZL_RES_TAG_LEN);
+    
+    /*
     // Finish authenticated decryption and validate tag
     err = hzl_AeadDecryptFinish(
             &aead,
             &plaintextStk[processedPtLen],
             &rxPdu[packedHdrLen + HZL_RES_TAG_IDX],
             HZL_RES_TAG_LEN);
+    */
     if (err != HZL_OK)
     {
         // Securely clear the decrypted data before returning. Some of the decrypted data may

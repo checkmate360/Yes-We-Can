@@ -1,7 +1,7 @@
 CC=gcc
 CFLAGS=-I/usr/include/SDL2 -Wall -Wextra
-LDFLAGS=-lSDL2 -lSDL2_image
-HZL = ../libhzl_server.so ../libhzl_client.so
+LDFLAGS=-lSDL2 -lSDL2_image -lwolfssl
+HZL = ../build/libhzl_server.so ../build/libhzl_client.so
 
 all: icsim controls
 

@@ -27,7 +27,6 @@
 #include "../inc/hzl_Server.h"
 #include "../inc/hzl_ServerOs.h"
 
-
 #include "lib.h"
 
 #ifndef DATA_DIR
@@ -533,7 +532,6 @@ int main(int argc, char *argv[]) {
         // The message was not successfully processed, as a security problem was detected with it.
         printf("Security Warning\n");
         //continue;
-        int x = 5;
       }
       else
       {

@@ -161,6 +161,8 @@ target_include_directories(hzl_client_any
         )
 target_link_libraries(hzl_client_any
         PRIVATE ascon128hash
+        PRIVATE wolfssl
+
         )
 
 
@@ -180,6 +182,7 @@ target_include_directories(hzl_client_desktop
         )
 target_link_libraries(hzl_client_desktop
         PRIVATE ascon128hash
+        PRIVATE wolfssl
         )
 if (USE_BCRYPT)
     target_link_libraries(hzl_client_desktop
@@ -204,6 +207,8 @@ target_include_directories(hzl_client_desktop_shared
         )
 target_link_libraries(hzl_client_desktop_shared
         PRIVATE ascon128hash
+        PRIVATE wolfssl
+
         )
 if (USE_BCRYPT)
     target_link_libraries(hzl_client_desktop_shared
@@ -267,6 +272,8 @@ target_include_directories(hzl_server_any
         )
 target_link_libraries(hzl_server_any
         PRIVATE ascon128hash
+        PRIVATE wolfssl
+
         )
 
 
@@ -286,6 +293,8 @@ target_include_directories(hzl_server_desktop
         )
 target_link_libraries(hzl_server_desktop
         PRIVATE ascon128hash
+        PRIVATE wolfssl
+
         )
 if (USE_BCRYPT)
     target_link_libraries(hzl_server_desktop
@@ -310,6 +319,8 @@ target_include_directories(hzl_server_desktop_shared
         )
 target_link_libraries(hzl_server_desktop_shared
         PRIVATE ascon128hash
+        PRIVATE wolfssl
+
         )
 if (USE_BCRYPT)
     target_link_libraries(hzl_server_desktop_shared
@@ -394,6 +405,8 @@ target_include_directories(test_hzl_client_desktop
         )
 target_link_libraries(test_hzl_client_desktop
         PRIVATE hzl_client_desktop
+        PRIVATE wolfssl
+
         )
 
 # Test runner executable for desktop using the shared library
@@ -410,6 +423,8 @@ target_include_directories(test_hzl_client_desktop_shared
         )
 target_link_libraries(test_hzl_client_desktop_shared
         PRIVATE hzl_client_desktop_shared
+        PRIVATE wolfssl
+
         )
 
 # ctest enabled to run the test executables
@@ -475,6 +490,8 @@ target_include_directories(test_hzl_server_desktop
         )
 target_link_libraries(test_hzl_server_desktop
         PRIVATE hzl_server_desktop
+        PRIVATE wolfssl
+
         )
 
 # Test runner executable for desktop using the shared library
@@ -491,6 +508,8 @@ target_include_directories(test_hzl_server_desktop_shared
         )
 target_link_libraries(test_hzl_server_desktop_shared
         PRIVATE hzl_server_desktop_shared
+        PRIVATE wolfssl
+
         )
 
 # ctest enabled to run the test executables
@@ -530,6 +549,8 @@ target_include_directories(test_hzl_interop_desktop
 target_link_libraries(test_hzl_interop_desktop
         PRIVATE hzl_client_desktop
         PRIVATE hzl_server_desktop
+        PRIVATE wolfssl
+
         )
 
 # Test runner executable for desktop using the shared library
@@ -549,6 +570,8 @@ target_include_directories(test_hzl_interop_desktop_shared
 target_link_libraries(test_hzl_interop_desktop_shared
         PRIVATE hzl_client_desktop_shared
         PRIVATE hzl_server_desktop_shared
+        PRIVATE wolfssl
+
         )
 
 # ctest enabled to run the test executables

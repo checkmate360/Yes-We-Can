@@ -50,6 +50,11 @@ extern "C"
 #include "hzl_CommonInternal.h"
 #include "ascon.h"
 
+#include <wolfssl/options.h>         // First if using options
+#include <wolfssl/wolfcrypt/aes.h>
+#include <string.h>
+#include <stdio.h>
+
 /**
  * @internal
  * Computes the size of the ciphertext based on the size of the plaintext.
@@ -112,7 +117,9 @@ size_t
 hzl_AeadEncryptUpdate(hzl_Aead_t* ctx,
                       uint8_t* ciphertext,
                       const uint8_t* plaintext,
-                      size_t plaintextLen);
+                      size_t plaintextLen,
+                      uint8_t* const tag,
+                      const uint8_t tagLen);
 
 /**
  * @internal
@@ -145,11 +152,13 @@ hzl_AeadEncryptFinish(hzl_Aead_t* ctx,
  * @param [in] ciphertextLen length of \p ciphertext in bytes
  * @return amount of bytes written into \p plaintext
  */
-size_t
+hzl_Err_t
 hzl_AeadDecryptUpdate(hzl_Aead_t* ctx,
                       uint8_t* plaintext,
                       const uint8_t* ciphertext,
-                      size_t ciphertextLen);
+                      size_t ciphertextLen,
+                      const uint8_t* const tag,
+                      const uint8_t tagLen);
 
 /**
  * @internal

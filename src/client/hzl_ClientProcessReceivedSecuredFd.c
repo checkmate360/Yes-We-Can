@@ -109,18 +109,24 @@ hzl_ClientProcessReceivedSecuredFd(hzl_RxSduMsg_t* unpackedMsg,
             unpackedSadfdHeader,
             receivedCtrnonce,
             ptlen);
-    const size_t processedPtLen = hzl_AeadDecryptUpdate(
+    err = hzl_AeadDecryptUpdate(
             &aead,
             unpackedMsg->data,  // Output: plaintext
             &rxPdu[packedHdrLen + HZL_SADFD_CTEXT_IDX],  // Input: ciphertext
-            ctlen);
+            ctlen,
+            &rxPdu[packedHdrLen + HZL_SADFD_TAG_IDX(ctlen)],
+            HZL_SADFD_TAG_LEN);
 
+
+    /*
     // Finish authenticated decryption and validate tag
     err = hzl_AeadDecryptFinish(
             &aead,
             &unpackedMsg->data[processedPtLen],
             &rxPdu[packedHdrLen + HZL_SADFD_TAG_IDX(ctlen)],
             HZL_SADFD_TAG_LEN);
+    */
+
     if (err != HZL_OK)
     {
         // Securely clear the decrypted data before returning. Some of the decrypted data may

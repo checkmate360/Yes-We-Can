@@ -295,6 +295,8 @@ void send_turn_signal(hzl_ClientCtx_t *signals_client)
 
 	//Can't send full 64 bytes because of over-head of encryption
 	//Send 32 bytes instead
+	//51 Bytes max length
+
 	err = hzl_ClientBuildSecuredFd(pPdu, signals_client, cf.data, sizeof(cf.data) - 32, destinationGroupId);
 	if (err == HZL_ERR_SESSION_NOT_ESTABLISHED)
 	{
@@ -724,7 +726,7 @@ int main(int argc, char *argv[])
 		nbytes = recvmsg(s, &msg, 0);
 		if (nbytes > 0 && cf.can_id == signal_id)
 		{
-			signal_init = 1;
+
 			hzl_CbsPduMsg_t reactionPdu;
 			hzl_RxSduMsg_t userData;
 			hzl_Err_t hzlErrCode = hzl_ClientProcessReceived(
@@ -738,6 +740,9 @@ int main(int argc, char *argv[])
 			if (hzlErrCode == HZL_OK)
 			{
 				printf("SIGNALS INIT OK\n");
+				signal_init = 1;
+			} else {
+				printf("ERROR WITH SIGNALS INIT\n");
 			}
 			// memset(&cf, 0, sizeof(cf));
 			// cf.can_id = signal_id;

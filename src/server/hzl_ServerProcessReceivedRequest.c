@@ -109,13 +109,17 @@ hzl_ServerBuildMsgResponse(hzl_CbsPduMsg_t* const msgToTx,
             &aead,
             &msgToTx->data[packedHdrLen + HZL_RES_CTEXT_IDX],  // Output: ciphertext
             ctx->groupStates[gid].currentStk,  // Input: plaintext
-            HZL_RES_CTEXT_LEN);
+            HZL_RES_CTEXT_LEN,
+            &msgToTx->data[packedHdrLen + HZL_RES_TAG_IDX],
+            HZL_RES_TAG_LEN);
     // Finish authenticated encryption and generate tag
+    /*
     hzl_AeadEncryptFinish(
             &aead,
             &msgToTx->data[packedHdrLen + HZL_RES_CTEXT_IDX + processedCtLen],  // Flush CT
             &msgToTx->data[packedHdrLen + HZL_RES_TAG_IDX],
             HZL_RES_TAG_LEN);
+    */
     // Message is packed in binary format, ready to transmit
     msgToTx->dataLen = packedHdrLen + HZL_RES_PAYLOAD_LEN;
     return HZL_OK;

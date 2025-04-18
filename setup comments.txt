@@ -1,0 +1,14 @@
+Since these are .so files, the os needs to know where to look in order to execute correctly
+export LD_LIBRARY_PATH=~/Documents/Hazelnet
+
+- Then add to bash
+
+
+
+//Adjust vcan0 for Vcan0
+ip link set vcan0 mtu 72
+
+https://docs.kernel.org/networking/can.html
+\
+
+Source: https://stackoverflow.com/questions/36568167/can-fd-support-for-virtual-can-vcan-on-socketcan

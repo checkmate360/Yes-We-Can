@@ -88,13 +88,17 @@ hzl_ServerBuildMsgSadfd(hzl_CbsPduMsg_t* const msgToTx,
             &aead,
             &msgToTx->data[packedHdrLen + HZL_SADFD_CTEXT_IDX],  // Output: ciphertext
             userData,  // Input: plaintext
-            userDataLen);
+            userDataLen,
+            &msgToTx->data[packedHdrLen + HZL_SADFD_TAG_IDX(userDataLen)],
+            HZL_SADFD_TAG_LEN);
     // Finish authenticated encryption and write tag
+    /*
     hzl_AeadEncryptFinish(
             &aead,
             &msgToTx->data[packedHdrLen + HZL_SADFD_CTEXT_IDX + processedPtLen],
             &msgToTx->data[packedHdrLen + HZL_SADFD_TAG_IDX(userDataLen)],
             HZL_SADFD_TAG_LEN);
+     */
     // Message is packed in binary format, ready to transmit
     msgToTx->dataLen = packedHdrLen + HZL_SADFD_PAYLOAD_LEN(userDataLen);
     // Increment the counter nonce, regardless of transmission success

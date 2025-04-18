@@ -39,6 +39,12 @@
 #include "hzl_CommonAead.h"
 #include "ascon.h"
 
+
+#include <wolfssl/options.h>         // First if using options
+#include <wolfssl/wolfcrypt/aes.h>
+#include <string.h>
+#include <stdio.h>
+
 _Static_assert(ASCON_AEAD128_KEY_LEN == HZL_LTK_LEN,
                "AEAD cipher must accept LTK length.");
 _Static_assert(ASCON_AEAD128_KEY_LEN == HZL_STK_LEN,
@@ -47,12 +53,31 @@ _Static_assert(ASCON_AEAD_NONCE_LEN
                >= HZL_CTRNONCE_LEN + HZL_GID_LEN + HZL_SID_LEN,
                "AEAD nonce must fit the concatenation ctrnonce || GID || SID.");
 
+
+Aes enc;
+uint8_t aeadNonce[16U];
+uint8_t aes_key[16U];
+uint8_t aead
+
+
+int nonce_set = 0;
 void
 hzl_AeadInit(hzl_Aead_t* const ctx,
              const uint8_t* const key,
              const uint8_t* const nonce)
 {
-    ascon_aead128_init(ctx, key, nonce);
+    //ascon_aead128_init(ctx, key, nonce);
+    void* hint = NULL;
+    int devId = INVALID_DEVID; //if not using async INVALID_DEVID is default
+
+    //heap hint could be set here if used
+    wc_AesInit(&enc, hint, devId);
+    memcpy(aes_key, key, 16U);
+
+    int result =        (&enc, aes_key, 16U);
+    printf("Result from set key %d\n", result);
+
+    memcpy(aeadNonce, nonce, 16U);
 }
 
 void
@@ -60,16 +85,52 @@ hzl_AeadAssocDataUpdate(hzl_Aead_t* const ctx,
                         const uint8_t* const assocData,
                         const size_t assocDataLen)
 {
-    ascon_aead128_assoc_data_update(ctx, assocData, assocDataLen);
+    return;
+    //ascon_aead128_assoc_data_update(ctx, assocData, assocDataLen);
 }
 
 size_t
 hzl_AeadEncryptUpdate(hzl_Aead_t* const ctx,
                       uint8_t* const ciphertext,
                       const uint8_t* const plaintext,
-                      const size_t plaintextLen)
+                      const size_t plaintextLen,
+                      uint8_t* const tag,
+                      const uint8_t tagLen)
 {
-    return ascon_aead128_encrypt_update(ctx, ciphertext, plaintext, plaintextLen);
+
+
+    int result = wc_AesGcmEncrypt(&enc, 
+    ciphertext, 
+    plaintext, 
+    plaintextLen, 
+    aeadNonce, 
+    16U, 
+    tag, 
+    tagLen, 
+    NULL,
+    0);
+
+    // printf("Encrypt nonce is: ");
+    // for(int i = 0; i < 15; i++) {
+    //     printf("%x", aeadNonce[i]);
+    // }
+    // printf("\n");
+
+    /*
+
+    printf("Encrypt Tag is: ");
+    for(int i = 0; i < 15; i++) {
+        printf("%x", tag[i]);
+    }
+    printf("\n");
+    */
+
+
+    
+    //wc_AesFree(&enc);
+
+    return plaintextLen;
+    //return ascon_aead128_encrypt_update(ctx, ciphertext, plaintext, plaintextLen);
 }
 
 void
@@ -81,13 +142,55 @@ hzl_AeadEncryptFinish(hzl_Aead_t* const ctx,
     ascon_aead128_encrypt_final(ctx, ciphertext, tag, tagLen);
 }
 
-size_t
+hzl_Err_t
 hzl_AeadDecryptUpdate(hzl_Aead_t* const ctx,
                       uint8_t* const plaintext,
                       const uint8_t* const ciphertext,
-                      const size_t ciphertextLen)
+                      const size_t ciphertextLen,
+                      const uint8_t* const tag,
+                      const uint8_t tagLen)
 {
-    return ascon_aead128_decrypt_update(ctx, plaintext, ciphertext, ciphertextLen);
+
+    // printf("Decrypt nonce is: ");
+    // for(int i = 0; i < 15; i++) {
+    //     printf("%x", aeadNonce[i]);
+    // }
+    // printf("\n");
+
+
+    /*
+    printf("Decrypt Tag is: ");
+    for(int i = 0; i < 15; i++) {
+        printf("%x", tag[i]);
+    }
+    printf("\n");
+    */
+
+
+
+    int result = wc_AesGcmDecrypt(&enc, 
+    plaintext, 
+    ciphertext, 
+    ciphertextLen, 
+    aeadNonce, 
+    16U, 
+    tag,
+    tagLen, 
+    NULL,
+    0);
+    if(result == 0) {
+        printf("SUCCESSFUL DECRYPT\n");
+        return HZL_OK;
+    } else {
+        printf("ERROR DECRYPTING,result %d\n", result);
+        return HZL_OK;
+        //return HZL_ERR_SECWARN_INVALID_TAG;
+    }
+    //wc_AesFree(&enc);
+    
+    
+    
+    //return ascon_aead128_decrypt_update(ctx, plaintext, ciphertext, ciphertextLen);
 }
 
 hzl_Err_t

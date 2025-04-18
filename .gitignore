@@ -40,3 +40,6 @@ docs/doxygen*
 /libhazelnetclient_sze/
 /libhazelnetserver_sze_s32k144/
 /libascon_dbg/
+
+CMakeFiles/*
+external/*
