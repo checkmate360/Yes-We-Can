@@ -57,7 +57,6 @@ _Static_assert(ASCON_AEAD_NONCE_LEN
 Aes enc;
 uint8_t aeadNonce[16U];
 uint8_t aes_key[16U];
-uint8_t aead
 
 
 int nonce_set = 0;
@@ -74,7 +73,7 @@ hzl_AeadInit(hzl_Aead_t* const ctx,
     wc_AesInit(&enc, hint, devId);
     memcpy(aes_key, key, 16U);
 
-    int result =        (&enc, aes_key, 16U);
+    int result = wc_AesGcmSetKey(&enc, aes_key, 16U);
     printf("Result from set key %d\n", result);
 
     memcpy(aeadNonce, nonce, 16U);
