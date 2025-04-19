@@ -197,6 +197,40 @@ void randomize_pkt(int start, int stop)
 	}
 }
 
+
+void send_encrypted(hzl_ClientCtx_t *client, hzl_Gid_t groupId ) {
+	hzl_Err_t err;
+	hzl_CbsPduMsg_t *pPdu; // Packed data, fits into one CAN FD message
+	err = hzl_ClientNewMsg(&pPdu);
+	err = hzl_ClientBuildSecuredFd(pPdu, client, cf.data, sizeof(cf.data) - 40, groupId);
+	if (err == HZL_ERR_SESSION_NOT_ESTABLISHED)
+	{
+		printf("ERROR NO SESSION \n");
+	} else if (err == HZL_ERR_NULL_PDU) {
+		printf("NULL PDU \n");
+	} else if(err == HZL_ERR_NULL_SDU) {
+		printf("NULL user data\n");
+	} else if(err == HZL_ERR_TOO_LONG_SDU) {
+		printf("DATA TOO LONG\n");
+	} else if(err == HZL_ERR_GID_TOO_LARGE_FOR_CONFIGURED_HEADER_TYPE) {
+		printf("CANT FIT GROUP ID\n");
+	} else if(err == HZL_ERR_UNKNOWN_GROUP) {
+		printf("UNKNOWN GROUP\n");
+	} else if (err == HZL_ERR_CANNOT_GENERATE_RANDOM) {
+		printf("CANNOT GENERATE RANDOM\n");
+	} else if (err ==HZL_ERR_CANNOT_GENERATE_NON_ZERO_RANDOM ) {
+		printf("CANNOT NON_ZERO GENERATE RANDOM\n");
+	} else if (err ==HZL_ERR_CANNOT_GET_CURRENT_TIME ) {
+		printf("CANNOT GET CURRENT TIME\n");
+	} else if(err != HZL_OK){
+		printf("SOME ERROR ENCRYPTING MESSAGE\n");
+	}
+	memcpy(cf.data, pPdu->data, sizeof(pPdu->data));
+	cf.len = pPdu->dataLen;
+	send_pkt(CANFD_MTU);
+
+}
+
 void send_lock(char door, hzl_ClientCtx_t *doors_client)
 {
 	door_state |= door;
@@ -295,7 +329,7 @@ void send_unlock(char door, hzl_ClientCtx_t *doors_client)
 	send_pkt(CANFD_MTU);
 }
 
-void send_speed()
+void send_speed(hzl_ClientCtx_t *speed_client)
 {
 	if (model)
 	{
@@ -311,7 +345,7 @@ void send_speed()
 			if (current_speed == 0)
 			{ // IDLE
 				cf.data[speed_pos] = rand() % 80;
-				cf.data[speed_pos + 1] = 208;
+				//cf.data[speed_pos + 1] = 208;
 			}
 			// TO DO - COMMENTED TEMPORARILY TO SIMPLIFY CAN DUM
 			// send_pkt(CAN_MTU);
@@ -328,34 +362,16 @@ void send_speed()
 		if (kph == 0)
 		{ // IDLE
 			cf.data[speed_pos] = 1;
-			cf.data[speed_pos + 1] = rand() % 255 + 100;
+			//cf.data[speed_pos + 1] = rand() % 255 + 100;
 		}
 	}
-	send_pkt(CAN_MTU);
-}
-
-void send_turn_signal(hzl_ClientCtx_t *signals_client)
-{
-	memset(&cf, 0, sizeof(cf));
-	cf.can_id = signal_id;
-	cf.len = signal_len;
-	cf.data[signal_pos] = signal_state;
-
-
+	//send_encrypted(speed_client, 1);
+	/*
 	hzl_Err_t err;
 	hzl_CbsPduMsg_t *pPdu; // Packed data, fits into one CAN FD message
 	err = hzl_ClientNewMsg(&pPdu);
-
-
 	hzl_Gid_t destinationGroupId = 1;
-
-
-
-
-
-	//Can't send full 64 bytes because of over-head of encryption
-	//Send 32 bytes instead
-	err = hzl_ClientBuildSecuredFd(pPdu, signals_client, cf.data, sizeof(cf.data) - 32, destinationGroupId);
+		err = hzl_ClientBuildSecuredFd(pPdu, speed_client, cf.data, sizeof(cf.data) - 40, destinationGroupId);
 	if (err == HZL_ERR_SESSION_NOT_ESTABLISHED)
 	{
 		printf("ERROR NO SESSION \n");
@@ -380,13 +396,22 @@ void send_turn_signal(hzl_ClientCtx_t *signals_client)
 	}
 	memcpy(cf.data, pPdu->data, sizeof(pPdu->data));
 	cf.len = pPdu->dataLen;
-		// if(signal_pos) randomize_pkt(0, signal_pos);
-		// if(signal_len != signal_pos + 1) randomize_pkt(signal_pos+1, signal_len);
 	send_pkt(CANFD_MTU);
+	*/
+}
+
+void send_turn_signal(hzl_ClientCtx_t *signals_client)
+{
+	memset(&cf, 0, sizeof(cf));
+	cf.can_id = signal_id;
+	cf.len = signal_len;
+	cf.data[signal_pos] = signal_state;
+	send_encrypted(signals_client, 1);
+
 }
 
 // Checks throttle to see if we should accelerate or decelerate the vehicle
-void checkAccel()
+void checkAccel(hzl_ClientCtx_t *speed_client)
 {
 	float rate = MAX_SPEED / (ACCEL_RATE * 100);
 	// Updated every 10 ms
@@ -411,7 +436,7 @@ void checkAccel()
 				}
 			}
 		}
-		send_speed();
+		send_speed(speed_client);
 		lastAccel = currentTime;
 	}
 }
@@ -433,6 +458,7 @@ void checkTurn(hzl_ClientCtx_t *signals_client)
 		{
 			signal_state = 0;
 		}
+
 		send_turn_signal(signals_client);
 		lastTurnSignal = currentTime;
 	}
@@ -870,8 +896,54 @@ int main(int argc, char *argv[])
 			}
 		}
 	}
-	
 
+	//Starting Speed
+	hzl_CbsPduMsg_t *pPduSpeed; // Packed data, fits into one CAN FD message
+		// Let's allocate the memory for a message we want to send
+	err = hzl_ClientNewMsg(&pPduSpeed);
+	if (err != HZL_OK)
+	{
+		printf("Error with Speed Message Allocation");
+	}
+	// To start secured communication within a Group, we need to start a handshake
+	// hzl_Gid_t destinationGroupId = 1; // The set of nodes we want to talk to
+	err = hzl_ClientBuildRequest(pPduSpeed, speed_client, destinationGroupId);
+	if (err != HZL_OK)
+	{
+		printf("Error with Speed Message Build");
+	}
+	// The Request message is built, the user must transmit it manually
+	memset(&cf, 0, sizeof(cf));
+	cf.can_id = speed_id;
+	cf.len = pPduSpeed->dataLen;
+	memcpy(cf.data, pPduSpeed->data, sizeof(pPduSpeed->data));
+	send_pkt(CANFD_MTU);
+
+	nbytes = 0;
+	while (speed_init == 0)
+	{
+		nbytes = recvmsg(s, &msg, 0);
+		if (nbytes > 0 && cf.can_id == speed_id)
+		{
+			speed_init = 1;
+			hzl_CbsPduMsg_t reactionPdu;
+			hzl_RxSduMsg_t userData;
+			hzl_Err_t hzlErrCode = hzl_ClientProcessReceived(
+				&reactionPdu, // automatic internal reaction message, if required
+				&userData,	  // decrypted user-data, if the message had any
+				speed_client,
+				cf.data,  // the CAN FD payload as received from the layer below
+				cf.len,	  // the CAN FD payload length in bytes (CAN DLC)
+				cf.can_id // the CAN ID of the message had
+			);
+			printf("%d", hzlErrCode);
+			if (hzlErrCode == HZL_OK)
+			{
+				printf("Speed INIT OK\n");
+			}
+		}
+	}
+	
 	if (seed)
 	{
 		srand(seed);
